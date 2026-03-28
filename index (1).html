@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Virgo — AI Farm Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a08;
+      --surface: #111110;
+      --border: #2a2a24;
+      --text: #e8e4d4;
+      --muted: #7a7a68;
+      --accent: #c8b84a;
+      --accent2: #4a7a5a;
+      --accent3: #7a4a3a;
+      --glow: rgba(200, 184, 74, 0.15);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* CUSTOM CURSOR */
+    .cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s, width 0.2s, height 0.2s;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 32px; height: 32px;
+      border: 1px solid rgba(200, 184, 74, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.15s ease-out, width 0.2s, height 0.2s, opacity 0.2s;
+    }
+    body:hover .cursor-ring { opacity: 1; }
+
+    /* FRACTAL CANVAS */
+    #fractal-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* GRAIN OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      opacity: 0.4;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 48px;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    nav.scrolled {
+      border-color: var(--border);
+      background: rgba(10, 10, 8, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 22px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-cta:hover { background: var(--accent); color: var(--bg); }
+
+    /* SECTIONS */
+    section { position: relative; z-index: 2; }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 48px 80px;
+    }
+    .hero-tag {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.3s forwards;
+    }
+    .hero-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(3.5rem, 9vw, 8.5rem);
+      line-height: 0.9;
+      letter-spacing: -0.03em;
+      max-width: 900px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+    .hero-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-width: 420px;
+      line-height: 1.8;
+      margin-top: 32px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.7s forwards;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 20px;
+      margin-top: 48px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.9s forwards;
+    }
+    .btn-primary {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 16px 36px;
+      background: var(--accent);
+      color: var(--bg);
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--glow); }
+    .btn-secondary {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 16px 36px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--text); }
+
+    /* SCROLL INDICATOR */
+    .scroll-hint {
+      position: absolute;
+      right: 48px;
+      bottom: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp 0.8s 1.2s forwards;
+    }
+    .scroll-hint span {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      writing-mode: vertical-rl;
+    }
+    .scroll-line {
+      width: 1px;
+      height: 60px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+      animation: scrollPulse 2s infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.2); }
+    }
+
+    /* STATS BAR */
+    .stats-bar {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 0 48px;
+    }
+    .stat-item {
+      padding: 40px 32px;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.8rem;
+      line-height: 1;
+      color: var(--accent);
+    }
+    .stat-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* ABOUT */
+    #about {
+      padding: 120px 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .section-title em { font-style: italic; color: var(--accent); }
+    .section-body {
+      font-size: 0.8rem;
+      line-height: 2;
+      color: var(--muted);
+      margin-top: 24px;
+    }
+    .about-visual {
+      position: relative;
+      height: 420px;
+    }
+    .fractal-card {
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .fractal-card canvas { width: 100%; height: 100%; }
+    .fractal-card-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+      height: 60%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 28px;
+    }
+    .card-stat { font-size: 0.7rem; color: var(--muted); }
+    .card-val { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--accent); margin-top: 4px; }
+
+    /* SERVICES */
+    #services {
+      padding: 80px 48px 120px;
+    }
+    .services-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 60px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+    }
+    .service-card {
+      background: var(--bg);
+      padding: 48px 36px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, var(--glow), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .service-card:hover { background: var(--surface); }
+    .service-card:hover::before { opacity: 1; }
+    .service-num {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+    .service-icon {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .service-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .service-desc {
+      font-size: 0.72rem;
+      line-height: 1.9;
+      color: var(--muted);
+    }
+    .service-tag {
+      display: inline-block;
+      margin-top: 24px;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    /* DEMO STRIP */
+    #demo {
+      padding: 100px 48px;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 80px;
+      align-items: center;
+      border-top: 1px solid var(--border);
+    }
+    .demo-screen {
+      position: relative;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .demo-topbar {
+      background: #161614;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #7a3a3a; }
+    .dot-y { background: var(--accent); opacity: 0.6; }
+    .dot-g { background: var(--accent2); opacity: 0.6; }
+    .demo-url {
+      font-size: 0.6rem;
+      color: var(--muted);
+      margin-left: 12px;
+      letter-spacing: 0.05em;
+    }
+    .demo-content {
+      padding: 28px;
+    }
+    .demo-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .demo-metric {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px;
+    }
+    .dm-label { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .dm-val { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--text); margin-top: 4px; }
+    .dm-change { font-size: 0.6rem; color: var(--accent2); margin-top: 2px; }
+    .demo-chart {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      height: 120px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .bar {
+      flex: 1;
+      background: var(--accent);
+      opacity: 0.7;
+      border-radius: 1px;
+      transition: opacity 0.2s;
+    }
+    .bar:hover { opacity: 1; }
+    .demo-alert {
+      background: rgba(74, 122, 90, 0.1);
+      border: 1px solid var(--accent2);
+      border-left: 3px solid var(--accent2);
+      padding: 12px 14px;
+      font-size: 0.62rem;
+      color: var(--accent2);
+      letter-spacing: 0.05em;
+      margin-top: 12px;
+    }
+
+    /* MARKET */
+    #market {
+      padding: 100px 48px;
+      border-top: 1px solid var(--border);
+    }
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      margin-top: 60px;
+      background: var(--border);
+    }
+    .market-cell {
+      background: var(--bg);
+      padding: 48px 36px;
+    }
+    .market-ring {
+      width: 80px; height: 80px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .market-ring::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent), transparent);
+      opacity: 0.3;
+    }
+    .market-name {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .market-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--text);
+    }
+    .market-desc { font-size: 0.7rem; color: var(--muted); margin-top: 10px; line-height: 1.7; }
+
+    /* TEAM */
+    #team {
+      padding: 100px 48px;
+      border-top: 1px solid var(--border);
+    }
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 60px;
+    }
+    .team-card {
+      border: 1px solid var(--border);
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .team-card:hover { border-color: var(--accent); }
+    .team-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .team-card:hover::after { opacity: 1; }
+    .team-role {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .team-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+    .team-dept {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .team-skill {
+      display: inline-block;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      padding: 5px 10px;
+      background: rgba(200, 184, 74, 0.08);
+      border: 1px solid rgba(200, 184, 74, 0.2);
+      color: var(--accent);
+    }
+
+    /* CTA STRIP */
+    #contact {
+      padding: 100px 48px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .cta-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .cta-title em { font-style: italic; color: var(--accent); }
+    .cta-body { font-size: 0.78rem; color: var(--muted); line-height: 1.9; margin-top: 20px; }
+    .cta-right { display: flex; flex-direction: column; gap: 16px; }
+    .cta-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cta-info-label { font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+    .cta-info-val { font-size: 0.78rem; color: var(--text); }
+    .btn-email {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      padding: 18px 28px;
+      background: var(--accent);
+      color: var(--bg);
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-email:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--glow); }
+
+    /* FOOTER */
+    footer {
+      padding: 40px 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    .footer-copy {
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .footer-link {
+      font-size: 0.62rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-link:hover { color: var(--accent); }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.7s, transform 0.7s;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* MOBILE */
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; }
+      .nav-links { display: none; }
+      #hero { padding: 0 24px 60px; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      #about, #demo, #contact { grid-template-columns: 1fr; gap: 40px; padding: 60px 24px; }
+      .services-grid, .market-grid, .team-grid { grid-template-columns: 1fr; }
+      #services, #market, #team { padding: 60px 24px; }
+      .scroll-hint { display: none; }
+      .services-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<canvas id="fractal-bg"></canvas>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a class="nav-logo" href="#"><span>V</span>irgo</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#demo">Dashboard</a></li>
+    <li><a href="#team">Team</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Contact Us</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-tag">↳ AI-powered precision agriculture · PEC Chandigarh</div>
+  <h1 class="hero-title">
+    Real-time<br><em>profit intelligence</em><br>for your farm.
+  </h1>
+  <p class="hero-sub">
+    Virgo integrates IoT sensing, AI analytics, and automated resource control — turning field data into financial clarity.
+  </p>
+  <div class="hero-actions">
+    <a href="#demo" class="btn-primary">View Demo Dashboard →</a>
+    <a href="#services" class="btn-secondary">Explore Services</a>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar reveal">
+  <div class="stat-item">
+    <div class="stat-num">80%</div>
+    <div class="stat-label">Marginal farmers losing >50% crops to climate</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">75%</div>
+    <div class="stat-label">Irrigation water wasted annually in India</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">$9.5B</div>
+    <div class="stat-label">Global precision agriculture market size</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">73%</div>
+    <div class="stat-label">Venture viability index (Wadhwani Foundation)</div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div>
+    <div class="section-label reveal">— What is Virgo</div>
+    <h2 class="section-title reveal">Farm data turned into <em>action</em>.</h2>
+    <p class="section-body reveal">
+      Virgo is a unified platform that continuously collects field data — soil moisture, crop health, hyperlocal weather — and translates it into real-time profit insights with automated irrigation and fertilizer control.<br><br>
+      Built by aerospace engineers passionate about sensors and automation. Designed for India's medium and large-scale farms adopting precision agriculture.
+    </p>
+    <br>
+    <a href="#contact" class="btn-primary reveal" style="display:inline-block; margin-top:8px;">Get in touch →</a>
+  </div>
+  <div class="about-visual reveal">
+    <div class="fractal-card">
+      <canvas id="about-fractal" width="600" height="420"></canvas>
+      <div class="fractal-card-overlay">
+        <div class="card-stat">Current Farm Profitability Index</div>
+        <div class="card-val">+24.6% ↑ above baseline</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="services-header">
+    <div>
+      <div class="section-label">— Our Services</div>
+      <h2 class="section-title reveal">What Virgo <em>does</em>.</h2>
+    </div>
+    <a href="#contact" class="btn-secondary reveal">Request a demo →</a>
+  </div>
+  <div class="services-grid reveal">
+    <div class="service-card">
+      <div class="service-num">01 —</div>
+      <span class="service-icon">⬡</span>
+      <h3 class="service-name">Real-Time Profit Dashboard</h3>
+      <p class="service-desc">Every farm action reflects instantly on your P&amp;L. See the financial impact of irrigation, fertilizer, and weather events as they happen — not at the end of the season.</p>
+      <span class="service-tag">IoT + Analytics</span>
+    </div>
+    <div class="service-card">
+      <div class="service-num">02 —</div>
+      <span class="service-icon">◈</span>
+      <h3 class="service-name">Automated Resource Control</h3>
+      <p class="service-desc">AI-driven irrigation and fertilizer scheduling that responds to real soil and weather conditions. Eliminate guesswork and reduce resource waste by up to 20%.</p>
+      <span class="service-tag">Automation</span>
+    </div>
+    <div class="service-card">
+      <div class="service-num">03 —</div>
+      <span class="service-icon">◉</span>
+      <h3 class="service-name">AI Crop Health Alerts</h3>
+      <p class="service-desc">Computer vision models detect pest infestations, disease, and nutrient deficiencies before visible symptoms appear — protecting yield quality at scale.</p>
+      <span class="service-tag">Computer Vision</span>
+    </div>
+    <div class="service-card">
+      <div class="service-num">04 —</div>
+      <span class="service-icon">⬢</span>
+      <h3 class="service-name">Hyperlocal Weather Forecasting</h3>
+      <p class="service-desc">Field-specific microclimate predictions replacing generic regional forecasts. Know what's happening on your land — not 50 km away.</p>
+      <span class="service-tag">Weather API</span>
+    </div>
+    <div class="service-card">
+      <div class="service-num">05 —</div>
+      <span class="service-icon">◫</span>
+      <h3 class="service-name">Multi-Farm Remote Monitoring</h3>
+      <p class="service-desc">Manage multiple farms from a single dashboard. Full sensor telemetry, alert management, and performance comparison across all your land.</p>
+      <span class="service-tag">Cloud Platform</span>
+    </div>
+    <div class="service-card">
+      <div class="service-num">06 —</div>
+      <span class="service-icon">◌</span>
+      <h3 class="service-name">Water &amp; Energy Optimization</h3>
+      <p class="service-desc">Integrated tracking of water usage, energy consumption, and operational costs. Transparent, data-backed financial reporting that builds lender and investor trust.</p>
+      <span class="service-tag">Sustainability</span>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div>
+    <div class="section-label reveal">— Dashboard Preview</div>
+    <h2 class="section-title reveal">Your farm, <em>quantified</em>.</h2>
+    <p class="section-body reveal">
+      A living view of every variable affecting your yield and profitability. Designed for farmers who think in outcomes, not inputs.
+    </p>
+    <a href="mailto:virgo.agritech@pec.edu.in?subject=Demo%20Request" class="btn-primary reveal" style="display:inline-block; margin-top:36px;">Request Full Demo →</a>
+  </div>
+  <div class="demo-screen reveal">
+    <div class="demo-topbar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <span class="demo-url">virgo.app / dashboard · Green Valley Farm — Corn</span>
+    </div>
+    <div class="demo-content">
+      <div class="demo-row">
+        <div class="demo-metric">
+          <div class="dm-label">Soil Moisture</div>
+          <div class="dm-val">38%</div>
+          <div class="dm-change">▲ Optimal range</div>
+        </div>
+        <div class="demo-metric">
+          <div class="dm-label">Air Temp</div>
+          <div class="dm-val">29°C</div>
+          <div class="dm-change">— Stable</div>
+        </div>
+        <div class="demo-metric">
+          <div class="dm-label">Profit Index</div>
+          <div class="dm-val">+18%</div>
+          <div class="dm-change">▲ vs last season</div>
+        </div>
+      </div>
+      <div class="demo-chart">
+        <div class="bar" style="height:40%"></div>
+        <div class="bar" style="height:55%"></div>
+        <div class="bar" style="height:48%"></div>
+        <div class="bar" style="height:70%"></div>
+        <div class="bar" style="height:62%"></div>
+        <div class="bar" style="height:85%"></div>
+        <div class="bar" style="height:78%"></div>
+        <div class="bar" style="height:90%"></div>
+        <div class="bar" style="height:82%"></div>
+        <div class="bar" style="height:95%"></div>
+        <div class="bar" style="height:88%"></div>
+        <div class="bar" style="height:100%"></div>
+      </div>
+      <div class="demo-alert">
+        ✓ AI Insight: Irrigation scheduled in 4 hrs based on soil data · Est. savings ₹340
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKET -->
+<section id="market">
+  <div class="section-label">— Market Opportunity</div>
+  <h2 class="section-title reveal">A billion-dollar <em>gap</em>.</h2>
+  <div class="market-grid reveal">
+    <div class="market-cell">
+      <div class="market-ring"></div>
+      <div class="market-name">TAM — Total Market</div>
+      <div class="market-val">USD 9.5B</div>
+      <div class="market-desc">Global Precision Agriculture Market growing at 12.7% CAGR through 2030.</div>
+    </div>
+    <div class="market-cell">
+      <div class="market-ring"></div>
+      <div class="market-name">SAM — Serviceable Market</div>
+      <div class="market-val">USD 1.8B</div>
+      <div class="market-desc">Indian precision agri opportunity — medium and large farms in Punjab, Haryana, Maharashtra, Karnataka.</div>
+    </div>
+    <div class="market-cell">
+      <div class="market-ring"></div>
+      <div class="market-name">SOM — Year 1–2 Target</div>
+      <div class="market-val">₹2.16 Cr</div>
+      <div class="market-desc">Targeting ~1,200 early adopter farms across 3 states with SaaS + hardware deployment.</div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="section-label">— The Builders</div>
+  <h2 class="section-title reveal">Engineers turned <em>farmers</em>.</h2>
+  <div class="team-grid reveal">
+    <div class="team-card">
+      <div class="team-role">Financial Manager</div>
+      <div class="team-name">Mihika Hetamsaria</div>
+      <div class="team-dept">Aerospace Engineering · PEC Chandigarh</div>
+      <span class="team-skill">Financial Planning</span>
+    </div>
+    <div class="team-card">
+      <div class="team-role">Developer</div>
+      <div class="team-name">Vishwa N Srivastava</div>
+      <div class="team-dept">Aerospace Engineering · PEC Chandigarh</div>
+      <span class="team-skill">IoT & Automation</span>
+    </div>
+    <div class="team-card">
+      <div class="team-role">R&D Engineer</div>
+      <div class="team-name">Paanav Bansal</div>
+      <div class="team-dept">Aerospace Engineering · PEC Chandigarh</div>
+      <span class="team-skill">Research & Data Analysis</span>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div>
+    <div class="section-label reveal">— Get in Touch</div>
+    <h2 class="cta-title reveal">Ready to see <em>Virgo</em> on your farm?</h2>
+    <p class="cta-body reveal">
+      We're actively onboarding pilot farms in Punjab, Haryana, and Maharashtra. Reach out to schedule a demo or discuss partnership opportunities.
+    </p>
+  </div>
+  <div class="cta-right reveal">
+    <div class="cta-info-row">
+      <span class="cta-info-label">Institution</span>
+      <span class="cta-info-val">Punjab Engineering College, Chandigarh</span>
+    </div>
+    <div class="cta-info-row">
+      <span class="cta-info-label">Program</span>
+      <span class="cta-info-val">Wadhwani Foundation Entrepreneurship</span>
+    </div>
+    <div class="cta-info-row">
+      <span class="cta-info-label">Viability Index</span>
+      <span class="cta-info-val" style="color: var(--accent)">73.33% — Viable</span>
+    </div>
+    <a href="mailto:virgo.agritech@pec.edu.in?subject=Virgo%20Demo%20Request&body=Hi%20Virgo%20team%2C%0A%0AI%20would%20like%20to%20learn%20more%20about%20your%20platform%20and%20schedule%20a%20demo.%0A%0AName%3A%0AFarm%20Location%3A%0AFarm%20Size%20(acres)%3A" class="btn-email">
+      <span>✉</span> Contact Us via Email
+    </a>
+    <a href="#demo" class="btn-secondary" style="text-align:center; padding: 18px 28px;">↓ View Demo Dashboard</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Virgo</div>
+  <span class="footer-copy">© 2025 Virgo Agri-Tech · PEC Chandigarh · Wadhwani Foundation</span>
+  <a href="mailto:virgo.agritech@pec.edu.in" class="footer-link">virgo.agritech@pec.edu.in</a>
+</footer>
+
+<script>
+  /* --- CURSOR --- */
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx+'px'; cursor.style.top = my+'px'; });
+  (function animRing() {
+    rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+    ring.style.left = rx+'px'; ring.style.top = ry+'px';
+    requestAnimationFrame(animRing);
+  })();
+
+  /* --- NAVBAR SCROLL --- */
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  /* --- REVEAL ON SCROLL --- */
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 60);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+
+  /* --- FRACTAL BACKGROUND (Barnsley Fern + Sierpinski variant) --- */
+  (function() {
+    const canvas = document.getElementById('fractal-bg');
+    const ctx = canvas.getContext('2d');
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Draw a slow evolving fractal tree
+    let t = 0;
+    function drawFractalTree(ctx, x, y, angle, depth, maxDepth, len) {
+      if (depth > maxDepth) return;
+      const rad = angle * Math.PI / 180;
+      const nx = x + Math.cos(rad) * len;
+      const ny = y + Math.sin(rad) * len;
+      const alpha = (1 - depth / maxDepth) * 0.6;
+      ctx.strokeStyle = depth < 3
+        ? `rgba(200,184,74,${alpha})`
+        : depth < 6
+          ? `rgba(74,122,90,${alpha * 0.7})`
+          : `rgba(200,184,74,${alpha * 0.4})`;
+      ctx.lineWidth = Math.max(0.4, (maxDepth - depth) * 0.3);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(nx, ny);
+      ctx.stroke();
+      const spread = 22 + Math.sin(t * 0.008 + depth) * 6;
+      drawFractalTree(ctx, nx, ny, angle - spread, depth + 1, maxDepth, len * 0.68);
+      drawFractalTree(ctx, nx, ny, angle + spread, depth + 1, maxDepth, len * 0.68);
+    }
+
+    function drawKochSnowflake(ctx, x1, y1, x2, y2, depth) {
+      if (depth === 0) {
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.strokeStyle = 'rgba(200,184,74,0.08)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        return;
+      }
+      const dx = x2 - x1, dy = y2 - y1;
+      const ax = x1 + dx/3, ay = y1 + dy/3;
+      const bx = x1 + dx*2/3, by = y1 + dy*2/3;
+      const mx = (x1+x2)/2 - (y2-y1)*Math.sqrt(3)/6;
+      const my = (y1+y2)/2 + (x2-x1)*Math.sqrt(3)/6;
+      drawKochSnowflake(ctx, x1, y1, ax, ay, depth-1);
+      drawKochSnowflake(ctx, ax, ay, mx, my, depth-1);
+      drawKochSnowflake(ctx, mx, my, bx, by, depth-1);
+      drawKochSnowflake(ctx, bx, by, x2, y2, depth-1);
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      t++;
+
+      // Background Koch curves
+      const cx = canvas.width * 0.75, cy = canvas.height * 0.3;
+      const r = 200;
+      const pts = [];
+      for (let i = 0; i < 3; i++) {
+        const a = (i * 120 + t * 0.05) * Math.PI / 180;
+        pts.push([cx + Math.cos(a)*r, cy + Math.sin(a)*r]);
+      }
+      drawKochSnowflake(ctx, pts[0][0], pts[0][1], pts[1][0], pts[1][1], 4);
+      drawKochSnowflake(ctx, pts[1][0], pts[1][1], pts[2][0], pts[2][1], 4);
+      drawKochSnowflake(ctx, pts[2][0], pts[2][1], pts[0][0], pts[0][1], 4);
+
+      // Fractal tree — bottom left
+      drawFractalTree(ctx,
+        canvas.width * 0.15,
+        canvas.height * 0.95,
+        -90 + Math.sin(t * 0.004) * 5,
+        0, 9, canvas.height * 0.22
+      );
+
+      // Second tree — bottom right
+      drawFractalTree(ctx,
+        canvas.width * 0.88,
+        canvas.height,
+        -90 + Math.cos(t * 0.003) * 4,
+        0, 8, canvas.height * 0.18
+      );
+
+      requestAnimationFrame(render);
+    }
+    render();
+  })();
+
+  /* --- ABOUT FRACTAL (Sierpinski-inspired) --- */
+  (function() {
+    const canvas = document.getElementById('about-fractal');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function sierpinski(ctx, ax, ay, bx, by, cx, cy, depth) {
+      if (depth === 0) {
+        ctx.beginPath();
+        ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy);
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(200,184,74,0.3)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        return;
+      }
+      const mx1 = (ax+bx)/2, my1 = (ay+by)/2;
+      const mx2 = (bx+cx)/2, my2 = (by+cy)/2;
+      const mx3 = (ax+cx)/2, my3 = (ay+cy)/2;
+      sierpinski(ctx, ax, ay, mx1, my1, mx3, my3, depth-1);
+      sierpinski(ctx, mx1, my1, bx, by, mx2, my2, depth-1);
+      sierpinski(ctx, mx3, my3, mx2, my2, cx, cy, depth-1);
+    }
+
+    let t = 0;
+    function render() {
+      ctx.clearRect(0, 0, 600, 420);
+      // Subtle background gradient
+      const grd = ctx.createRadialGradient(300, 210, 0, 300, 210, 300);
+      grd.addColorStop(0, 'rgba(200,184,74,0.04)');
+      grd.addColorStop(1, 'rgba(10,10,8,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, 600, 420);
+
+      const pulse = Math.sin(t * 0.01) * 10;
+      sierpinski(ctx, 300, 30 + pulse, 560, 400, 40, 400, 6);
+      t++;
+      requestAnimationFrame(render);
+    }
+    render();
+  })();
+</script>
+</body>
+</html>
